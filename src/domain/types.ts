@@ -1,19 +1,9 @@
-export type Role =
-  | 'Safety Personnel'
-  | 'Safety Officer'
-  | 'Safety Manager'
-  | 'Project Director'
-  | 'Admin';
+export type Role = 'Safety Officer' | 'Safety Manager' | 'Project Director' | 'Admin';
 
-export type ApprovalStatus =
-  | 'pending_personnel'
-  | 'pending_officer'
-  | 'pending_manager'
-  | 'approved'
-  | 'rejected'
-  | 'changes_requested';
+/** Safety Officer registration is active on submit. There is no onboarding queue. */
+export type ApprovalStatus = 'approved';
 
-export type ApprovalAction = 'submit' | 'approve' | 'reject' | 'request_changes' | 'resubmit';
+export type ApprovalAction = 'activate';
 
 export interface ApprovalEvent {
   id: string;
@@ -99,6 +89,8 @@ export interface Worker {
   strikes: StrikeRecord[];
   nextOfKin: EmergencyContact;
   createdAt: string;
+  /** Profile photo as a data URL. Null for seed workers, who use an initials placeholder. */
+  photoDataUrl: string | null;
 }
 
 export interface Company {
@@ -109,6 +101,8 @@ export interface Company {
   focus: string;
   contactName: string;
   phone: string;
+  /** Identity colour from the preset palette. Not a status colour. */
+  color: string;
 }
 
 export interface Project {
@@ -145,7 +139,7 @@ export interface AuditEvent {
 }
 
 export interface AppState {
-  version: 1;
+  version: 2;
   companies: Company[];
   projects: Project[];
   users: AppUser[];
@@ -175,4 +169,5 @@ export interface WorkerDraft {
   workPermitNumber: string;
   workPermitExpiry: string;
   nextOfKin: EmergencyContact;
+  photoDataUrl: string | null;
 }

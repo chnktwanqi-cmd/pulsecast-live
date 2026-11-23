@@ -91,7 +91,7 @@ interface WorkforceRepository {
 }
 ```
 
-`DemoStoreProvider` loads through `LocalWorkforceRepository`, saves whenever state changes, and exposes commands (`registerWorker`, `decideRegistration`, `proposeStrike`, `decideStrike`, training and contractor edits, role and flag changes). Pages do not touch `localStorage` themselves.
+`DemoStoreProvider` loads through `LocalWorkforceRepository` (`sitesafe-demo-v2`), saves whenever state changes, and exposes commands (`registerWorker`, `proposeStrike`, `decideStrike`, training and contractor edits, role and flag changes). Pages do not touch `localStorage` themselves. Registration writes the audit action `Registered and activated by Safety Officer`.
 
 Commands check the active user’s role and return `{ ok, error }`. The audit log records the actor, role, action and a short detail string.
 
@@ -99,23 +99,22 @@ Commands check the active user’s role and return `{ ok, error }`. The audit lo
 
 | Action | Roles |
 | --- | --- |
-| Register or resubmit | Safety Personnel, Safety Officer, Safety Manager |
-| Approve a registration stage | The role that owns that stage only |
-| Edit training | Personnel, Officer, Manager |
-| Propose a strike | Personnel, Officer, Manager |
+| Register a worker (active immediately, photo required) | Safety Officer, Admin |
+| Edit training | Safety Officer, Admin |
+| Propose a strike | Safety Officer, Safety Manager |
 | Approve a strike | Safety Manager, then Project Director |
 | Edit contractors | Safety Manager, Project Director, Admin |
 | Edit users | Admin |
 | Toggle the public strike flag | Safety Manager, Admin |
 | Reset demo data | Officer, Manager, Admin |
 
-Project Director can review and can decide strikes that have already passed the manager. They cannot register workers or skip a registration stage.
+Project Director decides strikes that have already passed the manager. They cannot register workers. Safety Manager and Project Director have no onboarding actions. There is no Safety Personnel role.
 
 ## Public versus internal
 
 Internal profile shows masked NRIC, date of birth, phone, address, permit and CSOC numbers, next of kin, strike reasons, evidence filenames and the approval trail.
 
-Public profile is a separate module. `toPublicProfile` returns `null` until the worker is approved, so an inactive QR does not reveal who it belongs to. When it returns a profile, the keys are exactly the allowlist in `PUBLIC_PROFILE_KEYS`. The concept card’s layout is kept: centred glass card, registration pill, rows, colour strike dot, disclaimer, and **Back to Internal Portal**. A banner states that strike disclosure is still pending privacy approval.
+Public profile is a separate module. Registered workers are active, so `toPublicProfile` returns a profile for them. The keys are exactly the allowlist in `PUBLIC_PROFILE_KEYS`, which now includes `photoDataUrl` and `companyColor`. The concept card’s layout is kept: centred glass card, photo or initials, company chip, registration pill, rows, colour strike dot, disclaimer, and **Back to Internal Portal**. A banner states that strike disclosure is still pending privacy approval.
 
 The displayed name matches the concept card (full name and worker id). That is an identification choice for the helmet sticker. It is not permission to add confidential fields. The public type cannot hold them, and the test fails if a masked NRIC, phone, address, permit number or strike reason string leaks into the JSON.
 

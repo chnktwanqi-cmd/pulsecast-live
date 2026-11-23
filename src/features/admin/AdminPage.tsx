@@ -9,7 +9,7 @@ import { formatDateTime } from '../../domain/dates';
 import { canManageUsers, canResetDemo, canToggleStrikeFlag } from '../../domain/permissions';
 import type { AuditEvent, Role } from '../../domain/types';
 
-const ROLES: Role[] = ['Safety Personnel', 'Safety Officer', 'Safety Manager', 'Project Director', 'Admin'];
+const ROLES: Role[] = ['Safety Officer', 'Safety Manager', 'Project Director', 'Admin'];
 
 export function AdminPage() {
   const { state, actor, updateUserRole, setPublicStrikeIndicator, resetDemo } = useDemo();

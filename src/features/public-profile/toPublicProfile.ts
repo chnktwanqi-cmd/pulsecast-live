@@ -16,6 +16,8 @@ export interface PublicProfile {
   initials: string;
   avatarIndex: number;
   company: string;
+  companyColor: string;
+  photoDataUrl: string | null;
   workerCode: string;
   project: string;
   designation: string;
@@ -36,6 +38,8 @@ export const PUBLIC_PROFILE_KEYS = [
   'initials',
   'avatarIndex',
   'company',
+  'companyColor',
+  'photoDataUrl',
   'workerCode',
   'project',
   'designation',
@@ -87,6 +91,8 @@ export function toPublicProfile(
     initials: initials(worker),
     avatarIndex: worker.avatarIndex,
     company: company?.name ?? 'Contractor',
+    companyColor: company?.color ?? '#1E3A5F',
+    photoDataUrl: worker.photoDataUrl,
     workerCode: worker.id,
     project: project?.name ?? 'Project',
     designation: worker.designation,

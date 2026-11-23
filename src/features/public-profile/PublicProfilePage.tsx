@@ -2,6 +2,8 @@ import { ArrowLeft, Check, Shield } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { tokens } from '../../config/tokens';
+import { CompanyChip } from '../../components/ui/CompanyChip';
+import { WorkerPortrait } from '../../components/ui/WorkerPortrait';
 import { useDemo } from '../../data/store';
 import type { ExpiryTier } from '../../domain/expiry';
 import { toPublicProfile, type PublicProfile } from './toPublicProfile';
@@ -40,7 +42,7 @@ export function PublicProfilePage() {
         <CardShell>
           <p className="text-sm font-semibold text-slate-800">This helmet QR is not active.</p>
           <p className="mt-2 text-sm text-slate-500">
-            Registration has not been approved, so no name, company or pass status is shown.
+            This registration is not active, so no name, company or pass status is shown.
           </p>
         </CardShell>
       ) : null}
@@ -58,7 +60,11 @@ function CardShell({ children }: { children: ReactNode }) {
 
 function PublicCard({ profile }: { profile: PublicProfile }) {
   return (
-    <article className="w-full max-w-[440px] rounded-[1.8rem] border border-white/80 bg-white/85 p-6 shadow-glass backdrop-blur-xl" data-testid="public-card">
+    <article
+      className="w-full max-w-[440px] rounded-[1.8rem] border border-white/80 bg-white/85 p-6 shadow-glass backdrop-blur-xl"
+      data-testid="public-card"
+      style={{ boxShadow: `0 0 0 4px ${profile.companyColor}22, 0 18px 50px rgba(15,23,42,0.08)` }}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-pink-500 to-violet-600">
@@ -74,14 +80,18 @@ function PublicCard({ profile }: { profile: PublicProfile }) {
         </span>
       </div>
       <div className="mt-6 flex flex-col items-center text-center">
-        <div
-          className="grid h-20 w-20 place-items-center rounded-3xl text-xl font-bold text-white shadow-md"
-          style={{ backgroundImage: tokens.avatar[profile.avatarIndex % tokens.avatar.length] }}
-        >
-          {profile.initials}
-        </div>
+        <WorkerPortrait
+          initials={profile.initials}
+          index={profile.avatarIndex}
+          photoDataUrl={profile.photoDataUrl}
+          color={profile.companyColor}
+          size="lg"
+          alt={profile.displayName}
+        />
         <h1 className="mt-4 text-2xl font-extrabold text-slate-900">{profile.displayName}</h1>
-        <p className="text-sm text-slate-500">{profile.company}</p>
+        <div className="mt-2">
+          <CompanyChip name={profile.company} color={profile.companyColor} />
+        </div>
         <span className="mt-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">Site registration active</span>
       </div>
       <dl className="mt-6">

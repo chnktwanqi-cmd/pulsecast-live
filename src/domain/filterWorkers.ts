@@ -1,6 +1,6 @@
 import { getExpiryTier, type ExpiryTier } from './expiry';
 import { currentStrikeLevel, type StrikeLevel } from './strikes';
-import type { ApprovalStatus, Company, Worker } from './types';
+import type { Company, Worker } from './types';
 
 export interface WorkerFilter {
   q?: string;
@@ -9,7 +9,6 @@ export interface WorkerFilter {
   designation?: string;
   tier?: ExpiryTier | '';
   strike?: '' | '0' | '1' | '2' | '3';
-  approval?: ApprovalStatus | '';
 }
 
 export function workerMatches(
@@ -21,7 +20,6 @@ export function workerMatches(
   if (filter.companyId && worker.companyId !== filter.companyId) return false;
   if (filter.trade && worker.trade !== filter.trade) return false;
   if (filter.designation && worker.designation !== filter.designation) return false;
-  if (filter.approval && worker.approvalStatus !== filter.approval) return false;
   if (filter.strike !== undefined && filter.strike !== '') {
     const level = String(currentStrikeLevel(worker.strikes)) as '0' | '1' | '2' | '3';
     if (level !== filter.strike) return false;

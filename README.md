@@ -20,16 +20,15 @@ npm test    # expiry tiers, approval and strike machines, public profile allowli
 npm run build
 ```
 
-Demo data is stored in `localStorage` under `sitesafe-demo-v1`. Settings → **Reset demo data** rebuilds it relative to today so the expiry tiers stay meaningful.
+Demo data is stored in `localStorage` under `sitesafe-demo-v2`. Settings → **Reset demo data** rebuilds it relative to today so the expiry tiers stay meaningful. Older `v1` data is ignored and reseeded.
 
 ## Click path
 
 1. Open **Overview** and filter the worker grid to **Orange 0–14 days**.
 2. Open a worker card and read **Training** and **Strikes**. Reasons are internal only.
-3. From **Worker Registry**, register a worker. The new record is **Pending Review**, never approved on submit.
-4. On the worker’s **Approvals** tab, switch the top-bar role through Safety Personnel, Safety Officer and Safety Manager and approve each stage. The helmet QR turns on only after the third approval.
-5. Open **Helmet QR**, then the public profile. Confirm the strike value is a colour dot, with no reason, and that NRIC, phone, address, permit numbers and next of kin are absent.
-6. Propose a strike, approve it as Safety Manager, then as Project Director. It counts only after both.
+3. From **Worker Registry**, as Safety Officer, register a worker with a profile photo. The record is **Active** on submit and the helmet QR is on. Other roles see the registry read-only. Lists are grouped by company, then designation.
+4. Open **QR Helmet IDs**, then a sticker. Download the 50 mm PDF or print it at 100% scale. Open the public profile and confirm the strike value is a colour dot, with no reason, and that NRIC, phone, address, permit numbers and next of kin are absent.
+5. Propose a strike, approve it as Safety Manager, then as Project Director on **Strike Approvals**. It counts only after both. Those roles do not approve onboarding.
 
 ## Folder structure
 
@@ -52,29 +51,23 @@ The shell follows the owner’s concept screens: a translucent white sidebar, pi
 
 ## Data model
 
-Workers, companies, projects, users, site contacts and an audit log live in one `AppState` object. A worker holds masked NRIC, contact details, CSOC and work-permit dates, induction, training records, strike records, next of kin and an approval trail.
+Workers, companies, projects, users, site contacts and an audit log live in one `AppState` object (`version: 2`). A worker holds masked NRIC, contact details, CSOC and work-permit dates, induction, training records, strike records, next of kin, a profile photo data URL (null on seed workers) and an activation trail. Each company stores an identity colour from a preset palette.
 
 `WorkforceRepository` (`src/data/repository.ts`) is the seam a future API can replace. `LocalWorkforceRepository` reads and writes `localStorage`. The React store calls that repository and exposes the commands the pages use.
 
 Dates on the seed are offsets from the day the data is built, so every expiry tier and every strike level is present.
 
-## Approval state machine
+## Registration
 
-A submitted registration starts at `pending_personnel` (**Pending Review**). It is never created as approved.
+The Safety Officer (or Admin) keys workers in directly. There is no Safety Personnel role and no onboarding queue. `activatedRegistrationStatus()` is `approved`, labelled **Active**, and the helmet QR is on at submit. The audit action is exactly `Registered and activated by Safety Officer`. A profile photo is required (image upload up to 5 MB, or camera capture where the browser supports it) and is stored as a data URL. Seed workers use generated initials placeholders, never photographs of real people.
 
-| From | Role | Approve | Reject | Request changes |
-| --- | --- | --- | --- | --- |
-| Pending Personnel | Safety Personnel | Pending Officer | Rejected | Changes requested |
-| Pending Officer | Safety Officer | Pending Manager | Rejected | Changes requested |
-| Pending Manager | Safety Manager | Approved | Rejected | Changes requested |
-
-Resubmit from **Changes requested** (Safety Personnel, Officer or Manager) returns the file to Pending Personnel. The helmet QR is active only when the status is Approved. Admin does not skip stages; use the role switcher.
+Other roles see the registry read-only. Personnel lists group by company (main contractor first, then subcontractors A–Z) and then by designation: Director, Project Manager, Engineer, Coordinator, Supervisor, worker trades.
 
 ## Strike state machine
 
 Levels shown on cards: No Strike, Strike 1 (yellow), Strike 2 (orange), Strike 3 (red).
 
-A proposal is the next level after the count of **approved** strikes. Safety Personnel, Officer or Manager may propose. The record then waits for:
+A proposal is the next level after the count of **approved** strikes. The Safety Officer or Safety Manager may propose. The record then waits for:
 
 1. Safety Manager → `pending_director`
 2. Project Director → `approved`
@@ -85,7 +78,7 @@ Either role can reject at their stage. Rejected and half-approved strikes do not
 
 `src/features/public-profile/toPublicProfile.ts` is the only builder of a `PublicProfile`. The type has no place for NRIC/FIN, date of birth, phone, address, next of kin, work-permit number, certificate number or disciplinary text. A unit test locks the key list and checks that those values do not appear in the JSON.
 
-The public card follows the owner’s concept screen: name, contractor, worker id, project, designation, induction, training status, CSOC and work-permit colour tiers, and a **colour-only** strike dot. Unapproved tokens render an inactive card with no identity fields. The QR encodes `/p/:publicToken`, a random token, not the `W-00…` id.
+The public card follows the owner’s concept screen: photo or initials placeholder, name, contractor chip in that company’s identity colour, worker id, project, designation, induction, training status, CSOC and work-permit colour tiers, and a **colour-only** strike dot. The QR encodes `/p/:publicToken`, a random token, not the `W-00…` id. Helmet stickers are 50 mm circles in a real PDF (`jspdf` + `qrcode`), one worker or an A4 sheet, printed at 100% scale.
 
 ## Privacy flag
 

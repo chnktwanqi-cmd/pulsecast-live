@@ -6,6 +6,8 @@ import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { StatusPill } from '../../components/ui/StatusPill';
 import { useDemo } from '../../data/store';
+import { COMPANY_PALETTE } from '../../domain/companyColors';
+import { companyOrder } from '../../domain/grouping';
 import { canManageContractors } from '../../domain/permissions';
 import type { Company } from '../../domain/types';
 
@@ -16,6 +18,7 @@ const empty: Omit<Company, 'id'> & { id?: string } = {
   focus: '',
   contactName: '',
   phone: '',
+  color: COMPANY_PALETTE[1].hex,
 };
 
 export function ContractorsPage() {
@@ -40,12 +43,16 @@ export function ContractorsPage() {
         }
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {state.companies.map((company) => {
+        {companyOrder(state.companies).map((company) => {
           const headcount = state.workers.filter((worker) => worker.companyId === company.id).length;
           return (
-            <GlassCard key={company.id} className="p-5">
+            <GlassCard key={company.id} className="p-5" style={{ borderTop: `5px solid ${company.color}` }}>
               <div className="flex items-start justify-between gap-3">
                 <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="h-3.5 w-3.5 rounded-full" style={{ background: company.color }} aria-hidden />
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Identity colour</span>
+                  </div>
                   <h2 className="text-lg font-bold text-slate-900">{company.name}</h2>
                   <p className="text-sm text-slate-500">{company.focus}</p>
                 </div>
@@ -114,6 +121,25 @@ export function ContractorsPage() {
             </Field>
             <Field label="Phone">
               <input className="control" value={editing.phone} onChange={(event) => setEditing({ ...editing, phone: event.target.value })} />
+            </Field>
+            <Field label="Identity colour">
+              <div className="flex flex-wrap gap-2" role="listbox" aria-label="Identity colour">
+                {COMPANY_PALETTE.map((colour) => {
+                  const selected = editing.color === colour.hex;
+                  return (
+                    <button
+                      key={colour.id}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      title={colour.label}
+                      className="h-9 w-9 rounded-full border-2"
+                      style={{ background: colour.hex, borderColor: selected ? '#0f172a' : 'transparent' }}
+                      onClick={() => setEditing({ ...editing, color: colour.hex })}
+                    />
+                  );
+                })}
+              </div>
             </Field>
             <div className="flex justify-end gap-2">
               <GhostButton type="button" onClick={() => setEditing(null)}>

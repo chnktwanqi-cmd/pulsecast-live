@@ -1,6 +1,7 @@
 import { Plus, Search, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { PersonnelGroups } from '../../components/personnel/PersonnelGroups';
 import { GhostButton, PrimaryButton } from '../../components/ui/Buttons';
 import { FilterBar, FilterSelect } from '../../components/ui/FilterBar';
 import { GlassCard } from '../../components/ui/GlassCard';
@@ -9,10 +10,10 @@ import { useDemo } from '../../data/store';
 import { downloadCsv } from '../../lib/csv';
 import type { ExpiryTier } from '../../domain/expiry';
 import { strikeLevelOf, workerMatches } from '../../domain/filterWorkers';
-import { approvalLabel } from '../../domain/approval';
+import { registrationLabel } from '../../domain/approval';
+import { companyOrder } from '../../domain/grouping';
 import { strikeLabel } from '../../domain/strikes';
 import { DESIGNATIONS, TRADES } from '../../domain/options';
-import type { ApprovalStatus } from '../../domain/types';
 import { canRegister } from '../../domain/permissions';
 import { WorkerCard } from './WorkerCard';
 
@@ -25,7 +26,6 @@ export function WorkerRegistryPage() {
   const [trade, setTrade] = useState('');
   const [designation, setDesignation] = useState('');
   const [tier, setTier] = useState<ExpiryTier | ''>('');
-  const [approval, setApproval] = useState<ApprovalStatus | ''>('');
 
   const project = state.projects.find((item) => item.id === state.currentProjectId);
   const scoped = state.currentProjectId === 'all'
@@ -35,9 +35,9 @@ export function WorkerRegistryPage() {
   const filtered = useMemo(
     () =>
       scoped.filter((worker) =>
-        workerMatches(worker, { q, companyId, strike, trade, designation, tier, approval }, today, state.companies),
+        workerMatches(worker, { q, companyId, strike, trade, designation, tier }, today, state.companies),
       ),
-    [scoped, q, companyId, strike, trade, designation, tier, approval, today, state.companies],
+    [scoped, q, companyId, strike, trade, designation, tier, today, state.companies],
   );
 
   const eyebrow = project ? `${project.code} · SITE SAFETY INTELLIGENCE` : 'ALL PROJECTS · SITE SAFETY INTELLIGENCE';
@@ -55,7 +55,7 @@ export function WorkerRegistryPage() {
               type="button"
               onClick={() => {
                 const rows = [
-                  ['Worker ID', 'Name', 'Company', 'Designation', 'Trade', 'Strike', 'Approval', 'CSOC expiry', 'Work permit expiry'],
+                  ['Worker ID', 'Name', 'Company', 'Designation', 'Trade', 'Strike', 'Status', 'CSOC expiry', 'Work permit expiry'],
                   ...filtered.map((worker) => {
                     const company = state.companies.find((item) => item.id === worker.companyId);
                     return [
@@ -65,7 +65,7 @@ export function WorkerRegistryPage() {
                       worker.designation,
                       worker.trade,
                       strikeLabel(strikeLevelOf(worker)),
-                      approvalLabel(worker.approvalStatus),
+                      registrationLabel(),
                       worker.csocExpiry,
                       worker.workPermitExpiry,
                     ];
@@ -87,7 +87,7 @@ export function WorkerRegistryPage() {
                 Register Worker
               </Link>
             ) : (
-              <PrimaryButton type="button" disabled title="Switch to Safety Personnel, Officer or Manager">
+              <PrimaryButton type="button" disabled title="Only the Safety Officer can register workers">
                 <Plus className="h-4 w-4" />
                 Register Worker
               </PrimaryButton>
@@ -109,12 +109,20 @@ export function WorkerRegistryPage() {
           </div>
           <FilterSelect aria-label="Contractor" value={companyId} onChange={(event) => setCompanyId(event.target.value)}>
             <option value="">All Contractors</option>
-            {state.companies.map((company) => (
+            {companyOrder(state.companies).map((company) => (
               <option key={company.id} value={company.id}>
                 {company.name}
               </option>
             ))}
           </FilterSelect>
+          {companyId ? (
+            <span
+              className="inline-flex h-11 items-center rounded-full px-3 text-xs font-semibold text-white"
+              style={{ background: state.companies.find((company) => company.id === companyId)?.color }}
+            >
+              {state.companies.find((company) => company.id === companyId)?.name}
+            </span>
+          ) : null}
           <FilterSelect aria-label="Strike level" value={strike} onChange={(event) => setStrike(event.target.value as typeof strike)}>
             <option value="">All Strike Levels</option>
             <option value="0">No Strike</option>
@@ -143,33 +151,23 @@ export function WorkerRegistryPage() {
             <option value="orange">Orange 0–14 days</option>
             <option value="red">Expired</option>
           </FilterSelect>
-          <FilterSelect
-            aria-label="Approval status"
-            value={approval}
-            onChange={(event) => setApproval(event.target.value as ApprovalStatus | '')}
-          >
-            <option value="">All approval states</option>
-            <option value="pending_personnel">Pending · Personnel</option>
-            <option value="pending_officer">Pending · Officer</option>
-            <option value="pending_manager">Pending · Manager</option>
-            <option value="changes_requested">Changes requested</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </FilterSelect>
         </div>
         <p className="mt-4 text-xs text-slate-400">
           {filtered.length} of {scoped.length} records · Click a worker card to inspect the internal profile.
         </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((worker) => (
-            <WorkerCard
-              key={worker.id}
-              worker={worker}
-              company={state.companies.find((company) => company.id === worker.companyId)}
-              today={today}
-              variant="registry"
-            />
-          ))}
+        <div className="mt-4">
+          <PersonnelGroups
+            workers={filtered}
+            companies={state.companies}
+            render={(worker) => (
+              <WorkerCard
+                worker={worker}
+                company={state.companies.find((company) => company.id === worker.companyId)}
+                today={today}
+                variant="registry"
+              />
+            )}
+          />
         </div>
         {filtered.length === 0 ? <p className="py-12 text-center text-sm text-slate-400">No workers match these filters.</p> : null}
       </GlassCard>

@@ -9,6 +9,7 @@ import { useDemo } from '../../data/store';
 import { ageInYears } from '../../domain/dates';
 import { DESIGNATIONS, INDUCTIONS, NATIONALITIES, TRADES } from '../../domain/options';
 import type { InductionStatus, WorkerDraft } from '../../domain/types';
+import { PhotoCapture } from './PhotoCapture';
 
 const STEPS = ['Worker', 'Engagement', 'Passes & kin', 'Review'];
 
@@ -31,6 +32,7 @@ function blank(companyId: string, projectId: string): WorkerDraft {
     workPermitNumber: '',
     workPermitExpiry: '',
     nextOfKin: { name: '', relationship: 'Spouse', phone: '' },
+    photoDataUrl: null,
   };
 }
 
@@ -58,7 +60,9 @@ export function RegisterWorkerPage() {
       }
       if (draft.phone.trim().length < 8) next.phone = 'Enter a fictional mobile.';
       if (draft.address.trim().length < 6) next.address = 'Enter a fictional address.';
+      if (!draft.photoDataUrl) next.photo = 'Add a profile photo before continuing.';
     }
+    if (index === 3 && !draft.photoDataUrl) next.photo = 'A profile photo is required.';
     if (index === 1) {
       if (!draft.companyId) next.companyId = 'Choose a contractor.';
       if (!draft.projectId) next.projectId = 'Choose a project.';
@@ -85,7 +89,7 @@ export function RegisterWorkerPage() {
         eyebrow={eyebrowProject ? `${eyebrowProject.code} · SITE SAFETY INTELLIGENCE` : 'ALL PROJECTS · SITE SAFETY INTELLIGENCE'}
         title="Register"
         accent="Worker"
-        subtitle="Submit a pack for review. It lands as Pending Review and is never auto-approved."
+        subtitle="The Safety Officer keys the worker in. Status is Active on submit and the helmet QR is on at once."
       />
       <GlassCard className="p-5 md:p-6">
         <Stepper steps={STEPS} current={step} />
@@ -97,6 +101,7 @@ export function RegisterWorkerPage() {
               if (validate(step)) setStep(step + 1);
               return;
             }
+            if (!validate(3)) return;
             const result = registerWorker(draft);
             if (result.ok && result.id) navigate(`/workers/${result.id}`);
             else setErrors({ form: result.error ?? 'Could not submit.' });
@@ -129,6 +134,16 @@ export function RegisterWorkerPage() {
               <Field label="Address" error={errors.address}>
                 <input className="control" value={draft.address} onChange={(event) => set('address', event.target.value)} />
               </Field>
+              <div className="md:col-span-2">
+                <PhotoCapture
+                  value={draft.photoDataUrl}
+                  onChange={(photo) => {
+                    set('photoDataUrl', photo);
+                    if (photo) setErrors((current) => ({ ...current, photo: '' }));
+                  }}
+                  error={draft.photoDataUrl ? undefined : errors.photo}
+                />
+              </div>
             </div>
           ) : null}
           {step === 1 ? (
@@ -227,8 +242,13 @@ export function RegisterWorkerPage() {
               <p>CSOC {draft.csocNumber} expires {draft.csocExpiry}</p>
               <p>Work permit {draft.workPermitNumber} expires {draft.workPermitExpiry}</p>
               <p>Next of kin {draft.nextOfKin.name} ({draft.nextOfKin.relationship})</p>
-              <p className="rounded-2xl bg-pink-50 px-4 py-3 text-pink-700">
-                Submitting sets the status to Pending Review. The helmet QR stays inactive until Safety Personnel, Safety Officer and Safety Manager have each approved.
+              {draft.photoDataUrl ? (
+                <img src={draft.photoDataUrl} alt="" className="h-16 w-16 rounded-2xl object-cover" />
+              ) : (
+                <p className="text-rose-600">{errors.photo ?? 'A profile photo is required.'}</p>
+              )}
+              <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-800">
+                Submit sets status to Active. The helmet QR is on immediately. An audit entry is written: Registered and activated by Safety Officer.
               </p>
               {errors.form ? <p className="text-rose-600">{errors.form}</p> : null}
             </div>
@@ -238,7 +258,7 @@ export function RegisterWorkerPage() {
               Back
             </GhostButton>
             <PrimaryButton type="submit" data-testid={step === 3 ? 'reg-submit' : 'reg-next'}>
-              {step === 3 ? 'Submit for review' : 'Continue'}
+              {step === 3 ? 'Register and activate' : 'Continue'}
             </PrimaryButton>
           </div>
         </form>

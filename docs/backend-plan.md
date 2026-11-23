@@ -21,7 +21,7 @@ Keep `worker_private`, `next_of_kin` and strike reason columns out of any query 
 
 ## Auth and roles
 
-Replace the demo switcher with a real session. Map the same five roles onto the permission table in `docs/implementation.md`. Registration and strike transitions should call the same pure functions (`nextApprovalStatus`, `nextStrikeStatus`) on the server so the client cannot skip a stage. Store the actor from the session, not from the request body.
+Replace the demo switcher with a real session. Map the four roles (Safety Officer, Safety Manager, Project Director, Admin) onto the permission table in `docs/implementation.md`. Strike transitions should call `nextStrikeStatus` on the server so the client cannot skip a stage. Registration creates an active worker; do not reintroduce an onboarding queue. Store the actor from the session, not from the request body.
 
 Project Director and Safety Manager are distinct accounts. One person must not be able to satisfy both strike approvals.
 
@@ -29,9 +29,8 @@ Project Director and Safety Manager are distinct accounts. One person must not b
 
 All internal routes require a session. The public route does not.
 
-- `GET /api/workers` — filters: project, company, trade, designation, expiry tier, strike level, approval, search
-- `POST /api/workers` — creates `pending_personnel` only
-- `POST /api/workers/:id/decisions` — approve, reject, request changes, resubmit
+- `GET /api/workers` — filters: project, company, trade, designation, expiry tier, strike level, search. Group by company, then designation.
+- `POST /api/workers` — Safety Officer or Admin. Body includes a profile photo. Creates an active worker and the audit action `Registered and activated by Safety Officer`.
 - `PUT /api/workers/:id/training` — add or edit a course
 - `POST /api/strikes` — propose the next level
 - `POST /api/strikes/:id/decisions` — manager or director

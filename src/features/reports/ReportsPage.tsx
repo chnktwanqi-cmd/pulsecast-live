@@ -5,7 +5,9 @@ import { GhostButton } from '../../components/ui/Buttons';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { useDemo } from '../../data/store';
+import { REGISTRATION_AUDIT_ACTION } from '../../domain/approval';
 import { formatDateTime, monthKey } from '../../domain/dates';
+import { groupPersonnel } from '../../domain/grouping';
 
 export function ReportsPage() {
   const { state, today } = useDemo();
@@ -13,8 +15,8 @@ export function ReportsPage() {
   const inMonth = (iso: string) => monthKey(iso) === month;
 
   const summary = useMemo(() => {
-    const submitted = state.audit.filter((event) => inMonth(event.at) && event.action === 'Registration submitted').length;
-    const approved = state.audit.filter((event) => inMonth(event.at) && event.action === 'Registration approve').length;
+    const submitted = state.audit.filter((event) => inMonth(event.at) && event.action === REGISTRATION_AUDIT_ACTION).length;
+    const approved = submitted;
     const proposed = state.audit.filter((event) => inMonth(event.at) && event.action === 'Strike proposed').length;
     const strikes = state.audit.filter((event) => inMonth(event.at) && event.action === 'Strike approve' && event.detail.includes('now counts')).length;
     const training = state.workers.reduce(
@@ -25,8 +27,7 @@ export function ReportsPage() {
   }, [month, state.audit, state.workers]);
 
   const chart = [
-    { name: 'Submitted', value: summary.submitted },
-    { name: 'Approved', value: summary.approved },
+    { name: 'Activated', value: summary.approved },
     { name: 'Strikes proposed', value: summary.proposed },
     { name: 'Strikes counting', value: summary.strikes },
     { name: 'Courses dated', value: summary.training },
@@ -51,7 +52,7 @@ export function ReportsPage() {
         }
       />
       <div className="print-sheet space-y-4">
-        <div className="grid gap-3 md:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-4">
           {chart.map((item) => (
             <GlassCard key={item.name} className="p-4">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{item.name}</div>
@@ -71,6 +72,25 @@ export function ReportsPage() {
                 <Bar dataKey="value" fill="#c084fc" radius={[10, 10, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-5">
+          <h2 className="text-sm font-bold text-slate-800">Workforce by company</h2>
+          <div className="mt-3 space-y-3">
+            {groupPersonnel(
+              state.currentProjectId === 'all' ? state.workers : state.workers.filter((worker) => worker.projectId === state.currentProjectId),
+              state.companies,
+            ).map((group) => (
+              <div key={group.company.id} className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm">
+                <span className="inline-flex items-center gap-2 font-semibold text-slate-800">
+                  <span className="h-3 w-3 rounded-full" style={{ background: group.company.color }} />
+                  {group.company.name}
+                </span>
+                <span className="rounded-full px-2 py-0.5 text-xs font-bold text-white" style={{ background: group.company.color }}>
+                  {group.workers.length}
+                </span>
+              </div>
+            ))}
           </div>
         </GlassCard>
         <GlassCard className="p-5">

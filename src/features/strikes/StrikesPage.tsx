@@ -31,9 +31,9 @@ export function StrikesPage() {
     <div>
       <PageHeader
         eyebrow={project ? `${project.code} · SITE SAFETY INTELLIGENCE` : 'ALL PROJECTS · SITE SAFETY INTELLIGENCE'}
-        title="Safety"
-        accent="Strikes"
-        subtitle="A strike counts only after the Safety Manager and the Project Director have both approved it."
+        title="Strike"
+        accent="Approvals"
+        subtitle="Safety Manager, then Project Director. Both are required before a strike counts. This queue is for strikes only."
         actions={
           canProposeStrike(actor.role) ? (
             <PrimaryButton type="button" data-testid="open-propose-strike" onClick={() => setOpen(true)} disabled={!target}>

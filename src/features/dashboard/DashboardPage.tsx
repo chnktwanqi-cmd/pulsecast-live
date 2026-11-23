@@ -7,6 +7,7 @@ import { useDemo } from '../../data/store';
 import { getExpiryTier, tierLabel, worseTier, type ExpiryTier } from '../../domain/expiry';
 import { strikeLevelOf, workerMatches } from '../../domain/filterWorkers';
 import { tokens } from '../../config/tokens';
+import { PersonnelGroups } from '../../components/personnel/PersonnelGroups';
 import { WorkerCard } from '../workers/WorkerCard';
 import { cn } from '../../lib/cn';
 
@@ -22,8 +23,12 @@ export function DashboardPage() {
     : state.workers.filter((worker) => worker.projectId === state.currentProjectId);
 
   const filtered = scoped.filter((worker) => workerMatches(worker, { tier }, today, state.companies));
-  const onSite = scoped.filter((worker) => worker.approvalStatus === 'approved').length;
-  const pending = scoped.filter((worker) => worker.approvalStatus.startsWith('pending') || worker.approvalStatus === 'changes_requested').length;
+  const onSite = scoped.length;
+  const pending = scoped.reduce(
+    (count, worker) =>
+      count + worker.strikes.filter((strike) => strike.status === 'pending_manager' || strike.status === 'pending_director').length,
+    0,
+  );
   const expiring = scoped.filter((worker) => {
     const worst = worseTier(getExpiryTier(worker.csocExpiry, today), getExpiryTier(worker.workPermitExpiry, today));
     return worst !== 'green';
@@ -47,6 +52,7 @@ export function DashboardPage() {
       state.companies.map((company) => ({
         name: company.name.replace(' Services', '').replace(' Contractors', ''),
         value: scoped.filter((worker) => worker.companyId === company.id).length,
+        color: company.color,
       })),
     [scoped, state.companies],
   );
@@ -62,8 +68,8 @@ export function DashboardPage() {
         subtitle="Workers on site, passes that are running out, and strikes that have been fully approved."
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="Workers on site" value={onSite} hint="Approved registrations" />
-        <Kpi label="Pending approvals" value={pending} hint="Including changes requested" />
+        <Kpi label="Workers on site" value={onSite} hint="Active registrations" />
+        <Kpi label="Strike approvals" value={pending} hint="Waiting on manager or director" />
         <Kpi label="Passes needing attention" value={expiring} hint="Yellow, orange or expired" />
         <Kpi label="Active strikes" value={strikes} hint="Approved strikes only" />
       </div>
@@ -96,7 +102,11 @@ export function DashboardPage() {
                 <XAxis type="number" allowDecimals={false} hide />
                 <YAxis type="category" dataKey="name" width={110} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#c084fc" radius={[0, 10, 10, 0]} />
+                <Bar dataKey="value" radius={[0, 10, 10, 0]}>
+                  {companyChart.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -125,16 +135,19 @@ export function DashboardPage() {
         <p className="mt-3 text-xs text-slate-400">
           {filtered.length} of {scoped.length} records · Click a worker card to inspect the internal profile.
         </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((worker) => (
-            <WorkerCard
-              key={worker.id}
-              worker={worker}
-              company={state.companies.find((company) => company.id === worker.companyId)}
-              today={today}
-              variant="board"
-            />
-          ))}
+        <div className="mt-4">
+          <PersonnelGroups
+            workers={filtered}
+            companies={state.companies}
+            render={(worker) => (
+              <WorkerCard
+                worker={worker}
+                company={state.companies.find((company) => company.id === worker.companyId)}
+                today={today}
+                variant="board"
+              />
+            )}
+          />
         </div>
         {filtered.length === 0 ? <p className="py-10 text-center text-sm text-slate-400">No workers in this expiry tier.</p> : null}
       </GlassCard>

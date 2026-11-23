@@ -1,8 +1,9 @@
 import { PUBLIC_STRIKE_INDICATOR } from '../config/flags';
+import { REGISTRATION_AUDIT_ACTION } from '../domain/approval';
+import { COMPANY_PALETTE } from '../domain/companyColors';
 import { addDays, isoDaysAgo } from '../domain/dates';
 import type {
   ApprovalEvent,
-  ApprovalStatus,
   AppState,
   AuditEvent,
   Company,
@@ -25,50 +26,49 @@ interface SeedRow {
   csocOffset: number;
   wpOffset: number;
   induction: InductionStatus;
-  approval: ApprovalStatus;
 }
 
 const ROWS: SeedRow[] = [
-  { first: 'Daniel', last: 'Tan', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Engineer', trade: 'Engineering', nationality: 'Singaporean', csocOffset: 140, wpOffset: 220, induction: 'Completed', approval: 'approved' },
-  { first: 'Aiman', last: 'Rahman', companyId: 'c-alpha', projectId: 'p-de178', designation: 'General Worker', trade: 'General Worker', nationality: 'Malaysian', csocOffset: 80, wpOffset: 60, induction: 'Completed', approval: 'approved' },
-  { first: 'Raj', last: 'Kumar', companyId: 'c-beta', projectId: 'p-de178', designation: 'Site Supervisor', trade: 'Supervision', nationality: 'Indian', csocOffset: 90, wpOffset: 110, induction: 'Completed', approval: 'approved' },
-  { first: 'Muhammad', last: 'Ali', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Coordinator', trade: 'Coordination', nationality: 'Bangladeshi', csocOffset: 70, wpOffset: 45, induction: 'Completed', approval: 'approved' },
-  { first: 'Ng', last: 'Wei Ming', companyId: 'c-gamma', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Electrical', nationality: 'Singaporean', csocOffset: 40, wpOffset: 55, induction: 'Completed', approval: 'approved' },
-  { first: 'Suresh', last: 'Nathan', companyId: 'c-alpha', projectId: 'p-de178', designation: 'General Worker', trade: 'General Worker', nationality: 'Indian', csocOffset: 100, wpOffset: 30, induction: 'Completed', approval: 'approved' },
-  { first: 'Lim', last: 'Hao Jun', companyId: 'c-beta', projectId: 'p-de178', designation: 'Project Manager', trade: 'Management', nationality: 'Singaporean', csocOffset: 160, wpOffset: 180, induction: 'Completed', approval: 'approved' },
-  { first: 'Farid', last: 'Ismail', companyId: 'c-gamma', projectId: 'p-de178', designation: 'General Worker', trade: 'Concreting', nationality: 'Malaysian', csocOffset: 50, wpOffset: 75, induction: 'Completed', approval: 'approved' },
-  { first: 'Priya', last: 'Menon', companyId: 'c-main', projectId: 'p-de178', designation: 'WSH Coordinator', trade: 'Safety', nationality: 'Singaporean', csocOffset: 20, wpOffset: 18, induction: 'Completed', approval: 'approved' },
-  { first: 'Gavin', last: 'Loh', companyId: 'c-delta', projectId: 'p-de178', designation: 'Foreman', trade: 'Electrical', nationality: 'Singaporean', csocOffset: 7, wpOffset: 90, induction: 'Completed', approval: 'approved' },
-  { first: 'Hannah', last: 'Teo', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Engineer', trade: 'Engineering', nationality: 'Singaporean', csocOffset: 0, wpOffset: 14, induction: 'Completed', approval: 'approved' },
-  { first: 'Farah', last: 'Rahman', companyId: 'c-epsilon', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Formwork', nationality: 'Malaysian', csocOffset: -5, wpOffset: 40, induction: 'Completed', approval: 'approved' },
-  { first: 'Joshua', last: 'Ng', companyId: 'c-beta', projectId: 'p-de178', designation: 'Site Supervisor', trade: 'Supervision', nationality: 'Singaporean', csocOffset: 15, wpOffset: -12, induction: 'Completed', approval: 'approved' },
-  { first: 'Mei', last: 'Ling', companyId: 'c-alpha', projectId: 'p-de178', designation: 'General Worker', trade: 'Painting', nationality: 'Chinese', csocOffset: 29, wpOffset: 16, induction: 'Completed', approval: 'pending_personnel' },
-  { first: 'Arun', last: 'Kumar', companyId: 'c-gamma', projectId: 'p-de204', designation: 'Trade Worker', trade: 'Welding', nationality: 'Indian', csocOffset: 10, wpOffset: 8, induction: 'Pending', approval: 'pending_personnel' },
-  { first: 'Siti', last: 'Aminah', companyId: 'c-delta', projectId: 'p-de178', designation: 'General Worker', trade: 'Electrical', nationality: 'Indonesian', csocOffset: 45, wpOffset: 60, induction: 'Completed', approval: 'pending_officer' },
-  { first: 'Wei', last: 'Jie', companyId: 'c-epsilon', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Scaffold', nationality: 'Malaysian', csocOffset: 3, wpOffset: 22, induction: 'Pending', approval: 'pending_officer' },
-  { first: 'Chloe', last: 'Tan', companyId: 'c-main', projectId: 'p-de311', designation: 'Site Coordinator', trade: 'Coordination', nationality: 'Singaporean', csocOffset: 80, wpOffset: 90, induction: 'Completed', approval: 'pending_manager' },
-  { first: 'Hafiz', last: 'Abdullah', companyId: 'c-beta', projectId: 'p-de178', designation: 'General Worker', trade: 'Concreting', nationality: 'Bangladeshi', csocOffset: -20, wpOffset: -2, induction: 'Completed', approval: 'pending_manager' },
-  { first: 'Nicole', last: 'Goh', companyId: 'c-alpha', projectId: 'p-de178', designation: 'Site Engineer', trade: 'Engineering', nationality: 'Singaporean', csocOffset: 25, wpOffset: 40, induction: 'Completed', approval: 'changes_requested' },
-  { first: 'Ravi', last: 'Shankar', companyId: 'c-gamma', projectId: 'p-de204', designation: 'Trade Worker', trade: 'Plumbing', nationality: 'Indian', csocOffset: 6, wpOffset: 100, induction: 'Not started', approval: 'rejected' },
-  { first: 'Jolene', last: 'Poh', companyId: 'c-main', projectId: 'p-de178', designation: 'Project Manager', trade: 'Management', nationality: 'Singaporean', csocOffset: 200, wpOffset: 200, induction: 'Completed', approval: 'approved' },
-  { first: 'Adam', last: 'Wong', companyId: 'c-delta', projectId: 'p-de178', designation: 'Foreman', trade: 'M&E', nationality: 'Singaporean', csocOffset: 12, wpOffset: 28, induction: 'Completed', approval: 'approved' },
-  { first: 'Liyana', last: 'Hassan', companyId: 'c-epsilon', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Formwork', nationality: 'Malaysian', csocOffset: 14, wpOffset: 0, induction: 'Completed', approval: 'approved' },
-  { first: 'Kenji', last: 'Sato', companyId: 'c-beta', projectId: 'p-de311', designation: 'Site Supervisor', trade: 'Supervision', nationality: 'Japanese', csocOffset: 33, wpOffset: 19, induction: 'Completed', approval: 'approved' },
-  { first: 'Brenda', last: 'Ong', companyId: 'c-alpha', projectId: 'p-de178', designation: 'General Worker', trade: 'Painting', nationality: 'Singaporean', csocOffset: -1, wpOffset: 50, induction: 'Completed', approval: 'approved' },
-  { first: 'Imran', last: 'Said', companyId: 'c-gamma', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Welding', nationality: 'Malaysian', csocOffset: 18, wpOffset: 15, induction: 'Completed', approval: 'approved' },
-  { first: 'Tessa', last: 'Lim', companyId: 'c-main', projectId: 'p-de178', designation: 'WSH Coordinator', trade: 'Safety', nationality: 'Singaporean', csocOffset: 60, wpOffset: 45, induction: 'Completed', approval: 'approved' },
-  { first: 'Harun', last: 'Yusof', companyId: 'c-delta', projectId: 'p-de204', designation: 'Trade Worker', trade: 'Electrical', nationality: 'Malaysian', csocOffset: 9, wpOffset: -8, induction: 'Pending', approval: 'approved' },
-  { first: 'Grace', last: 'Chan', companyId: 'c-epsilon', projectId: 'p-de178', designation: 'General Worker', trade: 'Scaffold', nationality: 'Singaporean', csocOffset: 75, wpOffset: 21, induction: 'Completed', approval: 'approved' },
-  { first: 'Danish', last: 'Ibrahim', companyId: 'c-beta', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Concreting', nationality: 'Indian', csocOffset: 4, wpOffset: 11, induction: 'Completed', approval: 'approved' },
-  { first: 'Yvonne', last: 'Koh', companyId: 'c-alpha', projectId: 'p-de311', designation: 'Site Coordinator', trade: 'Coordination', nationality: 'Singaporean', csocOffset: 110, wpOffset: 130, induction: 'Completed', approval: 'approved' },
-  { first: 'Faizal', last: 'Rahman', companyId: 'c-gamma', projectId: 'p-de178', designation: 'General Worker', trade: 'Lifting', nationality: 'Malaysian', csocOffset: -30, wpOffset: 17, induction: 'Completed', approval: 'approved' },
-  { first: 'Andrea', last: 'Lim', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Engineer', trade: 'Engineering', nationality: 'Singaporean', csocOffset: 16, wpOffset: 90, induction: 'Completed', approval: 'approved' },
-  { first: 'Benjamin', last: 'Ng', companyId: 'c-delta', projectId: 'p-de178', designation: 'Foreman', trade: 'M&E', nationality: 'Singaporean', csocOffset: 2, wpOffset: 70, induction: 'Completed', approval: 'approved' },
-  { first: 'Nurul', last: 'Aisyah', companyId: 'c-epsilon', projectId: 'p-de204', designation: 'Trade Worker', trade: 'Formwork', nationality: 'Indonesian', csocOffset: 27, wpOffset: -15, induction: 'Not started', approval: 'approved' },
-  { first: 'Marcus', last: 'Yeo', companyId: 'c-beta', projectId: 'p-de178', designation: 'General Worker', trade: 'Plumbing', nationality: 'Singaporean', csocOffset: 8, wpOffset: 5, induction: 'Completed', approval: 'approved' },
-  { first: 'Shalini', last: 'Devi', companyId: 'c-alpha', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Electrical', nationality: 'Indian', csocOffset: 50, wpOffset: -3, induction: 'Completed', approval: 'approved' },
-  { first: 'Patrick', last: 'Goh', companyId: 'c-gamma', projectId: 'p-de311', designation: 'Project Manager', trade: 'Management', nationality: 'Singaporean', csocOffset: 300, wpOffset: 240, induction: 'Completed', approval: 'approved' },
-  { first: 'Camila', last: 'Costa', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Coordinator', trade: 'Coordination', nationality: 'Singaporean', csocOffset: 22, wpOffset: 13, induction: 'Completed', approval: 'approved' },
+  { first: 'Daniel', last: 'Tan', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Engineer', trade: 'Engineering', nationality: 'Singaporean', csocOffset: 140, wpOffset: 220, induction: 'Completed' },
+  { first: 'Aiman', last: 'Rahman', companyId: 'c-alpha', projectId: 'p-de178', designation: 'General Worker', trade: 'General Worker', nationality: 'Malaysian', csocOffset: 80, wpOffset: 60, induction: 'Completed' },
+  { first: 'Raj', last: 'Kumar', companyId: 'c-beta', projectId: 'p-de178', designation: 'Site Supervisor', trade: 'Supervision', nationality: 'Indian', csocOffset: 90, wpOffset: 110, induction: 'Completed' },
+  { first: 'Muhammad', last: 'Ali', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Coordinator', trade: 'Coordination', nationality: 'Bangladeshi', csocOffset: 70, wpOffset: 45, induction: 'Completed' },
+  { first: 'Ng', last: 'Wei Ming', companyId: 'c-gamma', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Electrical', nationality: 'Singaporean', csocOffset: 40, wpOffset: 55, induction: 'Completed' },
+  { first: 'Suresh', last: 'Nathan', companyId: 'c-alpha', projectId: 'p-de178', designation: 'General Worker', trade: 'General Worker', nationality: 'Indian', csocOffset: 100, wpOffset: 30, induction: 'Completed' },
+  { first: 'Lim', last: 'Hao Jun', companyId: 'c-beta', projectId: 'p-de178', designation: 'Project Manager', trade: 'Management', nationality: 'Singaporean', csocOffset: 160, wpOffset: 180, induction: 'Completed' },
+  { first: 'Farid', last: 'Ismail', companyId: 'c-gamma', projectId: 'p-de178', designation: 'General Worker', trade: 'Concreting', nationality: 'Malaysian', csocOffset: 50, wpOffset: 75, induction: 'Completed' },
+  { first: 'Priya', last: 'Menon', companyId: 'c-main', projectId: 'p-de178', designation: 'WSH Coordinator', trade: 'Safety', nationality: 'Singaporean', csocOffset: 20, wpOffset: 18, induction: 'Completed' },
+  { first: 'Gavin', last: 'Loh', companyId: 'c-delta', projectId: 'p-de178', designation: 'Foreman', trade: 'Electrical', nationality: 'Singaporean', csocOffset: 7, wpOffset: 90, induction: 'Completed' },
+  { first: 'Hannah', last: 'Teo', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Engineer', trade: 'Engineering', nationality: 'Singaporean', csocOffset: 0, wpOffset: 14, induction: 'Completed' },
+  { first: 'Farah', last: 'Rahman', companyId: 'c-epsilon', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Formwork', nationality: 'Malaysian', csocOffset: -5, wpOffset: 40, induction: 'Completed' },
+  { first: 'Joshua', last: 'Ng', companyId: 'c-beta', projectId: 'p-de178', designation: 'Site Supervisor', trade: 'Supervision', nationality: 'Singaporean', csocOffset: 15, wpOffset: -12, induction: 'Completed' },
+  { first: 'Mei', last: 'Ling', companyId: 'c-alpha', projectId: 'p-de178', designation: 'General Worker', trade: 'Painting', nationality: 'Chinese', csocOffset: 29, wpOffset: 16, induction: 'Completed' },
+  { first: 'Arun', last: 'Kumar', companyId: 'c-gamma', projectId: 'p-de204', designation: 'Trade Worker', trade: 'Welding', nationality: 'Indian', csocOffset: 10, wpOffset: 8, induction: 'Pending' },
+  { first: 'Siti', last: 'Aminah', companyId: 'c-delta', projectId: 'p-de178', designation: 'General Worker', trade: 'Electrical', nationality: 'Indonesian', csocOffset: 45, wpOffset: 60, induction: 'Completed' },
+  { first: 'Wei', last: 'Jie', companyId: 'c-epsilon', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Scaffold', nationality: 'Malaysian', csocOffset: 3, wpOffset: 22, induction: 'Pending' },
+  { first: 'Chloe', last: 'Tan', companyId: 'c-main', projectId: 'p-de311', designation: 'Site Coordinator', trade: 'Coordination', nationality: 'Singaporean', csocOffset: 80, wpOffset: 90, induction: 'Completed' },
+  { first: 'Hafiz', last: 'Abdullah', companyId: 'c-beta', projectId: 'p-de178', designation: 'General Worker', trade: 'Concreting', nationality: 'Bangladeshi', csocOffset: -20, wpOffset: -2, induction: 'Completed' },
+  { first: 'Nicole', last: 'Goh', companyId: 'c-alpha', projectId: 'p-de178', designation: 'Site Engineer', trade: 'Engineering', nationality: 'Singaporean', csocOffset: 25, wpOffset: 40, induction: 'Completed' },
+  { first: 'Ravi', last: 'Shankar', companyId: 'c-gamma', projectId: 'p-de204', designation: 'Trade Worker', trade: 'Plumbing', nationality: 'Indian', csocOffset: 6, wpOffset: 100, induction: 'Not started' },
+  { first: 'Jolene', last: 'Poh', companyId: 'c-main', projectId: 'p-de178', designation: 'Project Manager', trade: 'Management', nationality: 'Singaporean', csocOffset: 200, wpOffset: 200, induction: 'Completed' },
+  { first: 'Adam', last: 'Wong', companyId: 'c-delta', projectId: 'p-de178', designation: 'Foreman', trade: 'M&E', nationality: 'Singaporean', csocOffset: 12, wpOffset: 28, induction: 'Completed' },
+  { first: 'Liyana', last: 'Hassan', companyId: 'c-epsilon', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Formwork', nationality: 'Malaysian', csocOffset: 14, wpOffset: 0, induction: 'Completed' },
+  { first: 'Kenji', last: 'Sato', companyId: 'c-beta', projectId: 'p-de311', designation: 'Site Supervisor', trade: 'Supervision', nationality: 'Japanese', csocOffset: 33, wpOffset: 19, induction: 'Completed' },
+  { first: 'Brenda', last: 'Ong', companyId: 'c-alpha', projectId: 'p-de178', designation: 'General Worker', trade: 'Painting', nationality: 'Singaporean', csocOffset: -1, wpOffset: 50, induction: 'Completed' },
+  { first: 'Imran', last: 'Said', companyId: 'c-gamma', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Welding', nationality: 'Malaysian', csocOffset: 18, wpOffset: 15, induction: 'Completed' },
+  { first: 'Tessa', last: 'Lim', companyId: 'c-main', projectId: 'p-de178', designation: 'WSH Coordinator', trade: 'Safety', nationality: 'Singaporean', csocOffset: 60, wpOffset: 45, induction: 'Completed' },
+  { first: 'Harun', last: 'Yusof', companyId: 'c-delta', projectId: 'p-de204', designation: 'Trade Worker', trade: 'Electrical', nationality: 'Malaysian', csocOffset: 9, wpOffset: -8, induction: 'Pending' },
+  { first: 'Grace', last: 'Chan', companyId: 'c-epsilon', projectId: 'p-de178', designation: 'General Worker', trade: 'Scaffold', nationality: 'Singaporean', csocOffset: 75, wpOffset: 21, induction: 'Completed' },
+  { first: 'Danish', last: 'Ibrahim', companyId: 'c-beta', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Concreting', nationality: 'Indian', csocOffset: 4, wpOffset: 11, induction: 'Completed' },
+  { first: 'Yvonne', last: 'Koh', companyId: 'c-alpha', projectId: 'p-de311', designation: 'Site Coordinator', trade: 'Coordination', nationality: 'Singaporean', csocOffset: 110, wpOffset: 130, induction: 'Completed' },
+  { first: 'Faizal', last: 'Rahman', companyId: 'c-gamma', projectId: 'p-de178', designation: 'General Worker', trade: 'Lifting', nationality: 'Malaysian', csocOffset: -30, wpOffset: 17, induction: 'Completed' },
+  { first: 'Andrea', last: 'Lim', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Engineer', trade: 'Engineering', nationality: 'Singaporean', csocOffset: 16, wpOffset: 90, induction: 'Completed' },
+  { first: 'Benjamin', last: 'Ng', companyId: 'c-delta', projectId: 'p-de178', designation: 'Foreman', trade: 'M&E', nationality: 'Singaporean', csocOffset: 2, wpOffset: 70, induction: 'Completed' },
+  { first: 'Nurul', last: 'Aisyah', companyId: 'c-epsilon', projectId: 'p-de204', designation: 'Trade Worker', trade: 'Formwork', nationality: 'Indonesian', csocOffset: 27, wpOffset: -15, induction: 'Not started' },
+  { first: 'Marcus', last: 'Yeo', companyId: 'c-beta', projectId: 'p-de178', designation: 'General Worker', trade: 'Plumbing', nationality: 'Singaporean', csocOffset: 8, wpOffset: 5, induction: 'Completed' },
+  { first: 'Shalini', last: 'Devi', companyId: 'c-alpha', projectId: 'p-de178', designation: 'Trade Worker', trade: 'Electrical', nationality: 'Indian', csocOffset: 50, wpOffset: -3, induction: 'Completed' },
+  { first: 'Patrick', last: 'Goh', companyId: 'c-gamma', projectId: 'p-de311', designation: 'Project Manager', trade: 'Management', nationality: 'Singaporean', csocOffset: 300, wpOffset: 240, induction: 'Completed' },
+  { first: 'Camila', last: 'Costa', companyId: 'c-main', projectId: 'p-de178', designation: 'Site Coordinator', trade: 'Coordination', nationality: 'Singaporean', csocOffset: 22, wpOffset: 13, induction: 'Completed' },
 ];
 
 const BCSS_ROLES = new Set([
@@ -98,69 +98,17 @@ function publicToken(index: number): string {
   return out;
 }
 
-function approvalTrail(workerId: string, status: ApprovalStatus, today: Date): ApprovalEvent[] {
-  const submit: ApprovalEvent = {
-    id: `ap-${workerId}-submit`,
-    at: isoDaysAgo(today, 24, 9),
-    role: 'Safety Personnel',
-    actor: 'Aisha Rahman',
-    action: 'submit',
-    remarks: 'Registration pack submitted for review.',
-    from: 'pending_personnel',
-    to: 'pending_personnel',
-  };
-  const personnel: ApprovalEvent = {
-    id: `ap-${workerId}-p`,
-    at: isoDaysAgo(today, 20, 11),
-    role: 'Safety Personnel',
-    actor: 'Aisha Rahman',
-    action: 'approve',
-    remarks: 'Identity and induction pack checked.',
-    from: 'pending_personnel',
-    to: 'pending_officer',
-  };
-  const officer: ApprovalEvent = {
-    id: `ap-${workerId}-o`,
-    at: isoDaysAgo(today, 16, 14),
-    role: 'Safety Officer',
-    actor: 'Sofia Ong',
-    action: 'approve',
-    remarks: 'CSOC and work pass dates verified.',
-    from: 'pending_officer',
-    to: 'pending_manager',
-  };
-  const manager: ApprovalEvent = {
-    id: `ap-${workerId}-m`,
-    at: isoDaysAgo(today, 12, 16),
-    role: 'Safety Manager',
-    actor: 'Marcus Lim',
-    action: 'approve',
-    remarks: 'Approved. Helmet QR may be issued.',
-    from: 'pending_manager',
-    to: 'approved',
-  };
-  if (status === 'pending_personnel') return [submit];
-  if (status === 'pending_officer') return [submit, personnel];
-  if (status === 'pending_manager') return [submit, personnel, officer];
-  if (status === 'approved') return [submit, personnel, officer, manager];
-  if (status === 'changes_requested') {
-    return [
-      submit,
-      {
-        ...personnel,
-        action: 'request_changes',
-        to: 'changes_requested',
-        remarks: 'Work pass scan is unreadable. Please resubmit a clearer fictional copy.',
-      },
-    ];
-  }
+function approvalTrail(workerId: string, today: Date): ApprovalEvent[] {
   return [
-    submit,
     {
-      ...personnel,
-      action: 'reject',
-      to: 'rejected',
-      remarks: 'Sample rejection: duplicate registration closed without approval.',
+      id: `ap-${workerId}-activate`,
+      at: isoDaysAgo(today, 12, 10),
+      role: 'Safety Officer',
+      actor: 'Sofia Ong',
+      action: 'activate',
+      remarks: 'Registered and activated by Safety Officer. Helmet QR is on.',
+      from: 'approved',
+      to: 'approved',
     },
   ];
 }
@@ -341,12 +289,12 @@ function strikesFor(workerId: string, today: Date): StrikeRecord[] {
 }
 
 const companies: Company[] = [
-  { id: 'c-main', name: 'Vantage Maincon', kind: 'main', uen: '202600001A', focus: 'Main contractor', contactName: 'Helen Chua', phone: '+65 6100 0100' },
-  { id: 'c-alpha', name: 'Alpha Engineering', kind: 'sub', uen: '202611102B', focus: 'Structural steel', contactName: 'Paul Seah', phone: '+65 6100 0201' },
-  { id: 'c-beta', name: 'Beta Civil Works', kind: 'sub', uen: '202622203C', focus: 'Civil works', contactName: 'Nora Tan', phone: '+65 6100 0302' },
-  { id: 'c-gamma', name: 'Gamma Contractors', kind: 'sub', uen: '202633304D', focus: 'Architectural trades', contactName: 'Chris Ho', phone: '+65 6100 0403' },
-  { id: 'c-delta', name: 'Delta M&E Services', kind: 'sub', uen: '202644405E', focus: 'Mechanical & electrical', contactName: 'Irene Pek', phone: '+65 6100 0504' },
-  { id: 'c-epsilon', name: 'Epsilon Formwork', kind: 'sub', uen: '202655506F', focus: 'Formwork & scaffolding', contactName: 'Sam Lee', phone: '+65 6100 0605' },
+  { id: 'c-main', name: 'Vantage Maincon', kind: 'main', uen: '202600001A', focus: 'Main contractor', contactName: 'Helen Chua', phone: '+65 6100 0100', color: COMPANY_PALETTE[0].hex },
+  { id: 'c-alpha', name: 'Alpha Engineering', kind: 'sub', uen: '202611102B', focus: 'Structural steel', contactName: 'Paul Seah', phone: '+65 6100 0201', color: COMPANY_PALETTE[1].hex },
+  { id: 'c-beta', name: 'Beta Civil Works', kind: 'sub', uen: '202622203C', focus: 'Civil works', contactName: 'Nora Tan', phone: '+65 6100 0302', color: COMPANY_PALETTE[3].hex },
+  { id: 'c-gamma', name: 'Gamma Contractors', kind: 'sub', uen: '202633304D', focus: 'Architectural trades', contactName: 'Chris Ho', phone: '+65 6100 0403', color: COMPANY_PALETTE[5].hex },
+  { id: 'c-delta', name: 'Delta M&E Services', kind: 'sub', uen: '202644405E', focus: 'Mechanical & electrical', contactName: 'Irene Pek', phone: '+65 6100 0504', color: COMPANY_PALETTE[2].hex },
+  { id: 'c-epsilon', name: 'Epsilon Formwork', kind: 'sub', uen: '202655506F', focus: 'Formwork & scaffolding', contactName: 'Sam Lee', phone: '+65 6100 0605', color: COMPANY_PALETTE[4].hex },
 ];
 
 const projects: Project[] = [
@@ -372,7 +320,7 @@ export function buildSeed(today: Date): AppState {
     const csocExpiry = addDays(today, row.csocOffset);
     const workPermitExpiry = addDays(today, row.wpOffset);
     const serial = String(281 + index).padStart(5, '0');
-    const trail = approvalTrail(id, row.approval, today);
+    const trail = approvalTrail(id, today);
     const strikes = strikesFor(id, today);
     const worker: Worker = {
       id,
@@ -394,7 +342,7 @@ export function buildSeed(today: Date): AppState {
       csocNumber: `CSOC-DEMO-${serial}`,
       csocExpiry,
       siteInduction: row.induction,
-      approvalStatus: row.approval,
+      approvalStatus: 'approved',
       approvalTrail: trail,
       trainings: trainingsFor(id, row, index, today, csocExpiry),
       strikes,
@@ -404,6 +352,7 @@ export function buildSeed(today: Date): AppState {
         phone: `+65 9${String(200 + index).padStart(3, '0')} ${String(2000 + index)}`,
       },
       createdAt: isoDaysAgo(today, 40 - (index % 25), 8),
+      photoDataUrl: null,
     };
     trail.forEach((event) => {
       audit.push({
@@ -411,7 +360,7 @@ export function buildSeed(today: Date): AppState {
         at: event.at,
         actor: event.actor,
         role: event.role,
-        action: event.action === 'submit' ? 'Registration submitted' : `Registration ${event.action.replace('_', ' ')}`,
+        action: REGISTRATION_AUDIT_ACTION,
         target: `${worker.firstName} ${worker.lastName}`,
         detail: event.remarks,
       });
@@ -435,11 +384,10 @@ export function buildSeed(today: Date): AppState {
   audit.sort((a, b) => (a.at < b.at ? 1 : -1));
 
   return {
-    version: 1,
+    version: 2,
     companies,
     projects,
     users: [
-      { id: 'u-personnel', name: 'Aisha Rahman', role: 'Safety Personnel', email: 'aisha.rahman@vantagemaincon.example', initials: 'AR' },
       { id: 'u-officer', name: 'Sofia Ong', role: 'Safety Officer', email: 'sofia.ong@vantagemaincon.example', initials: 'SO' },
       { id: 'u-manager', name: 'Marcus Lim', role: 'Safety Manager', email: 'marcus.lim@vantagemaincon.example', initials: 'ML' },
       { id: 'u-director', name: 'Helen Chua', role: 'Project Director', email: 'helen.chua@vantagemaincon.example', initials: 'HC' },

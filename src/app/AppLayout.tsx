@@ -4,7 +4,6 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Logo } from '../components/ui/Logo';
 import { Drawer } from '../components/ui/Drawer';
 import { useDemo } from '../data/store';
-import { approvalLabel } from '../domain/approval';
 import { cn } from '../lib/cn';
 import { NAV } from './nav';
 
@@ -92,18 +91,6 @@ export function AppLayout() {
   const notices = useMemo(() => {
     const items: { id: string; title: string; body: string; to: string }[] = [];
     scoped.forEach((worker) => {
-      const waiting =
-        (worker.approvalStatus === 'pending_personnel' && actor.role === 'Safety Personnel') ||
-        (worker.approvalStatus === 'pending_officer' && actor.role === 'Safety Officer') ||
-        (worker.approvalStatus === 'pending_manager' && actor.role === 'Safety Manager');
-      if (waiting) {
-        items.push({
-          id: `ap-${worker.id}`,
-          title: `${worker.firstName} ${worker.lastName}`,
-          body: `${approvalLabel(worker.approvalStatus)} is waiting on ${actor.role}.`,
-          to: `/workers/${worker.id}`,
-        });
-      }
       worker.strikes.forEach((strike) => {
         const strikeWaiting =
           (strike.status === 'pending_manager' && actor.role === 'Safety Manager') ||

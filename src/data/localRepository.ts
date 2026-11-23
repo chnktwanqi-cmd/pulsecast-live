@@ -2,7 +2,7 @@ import type { AppState } from '../domain/types';
 import { buildSeed } from './seed';
 import type { WorkforceRepository } from './repository';
 
-const STORAGE_KEY = 'sitesafe-demo-v1';
+const STORAGE_KEY = 'sitesafe-demo-v2';
 
 export class LocalWorkforceRepository implements WorkforceRepository {
   load(today: Date): AppState {
@@ -10,7 +10,7 @@ export class LocalWorkforceRepository implements WorkforceRepository {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return buildSeed(today);
       const parsed = JSON.parse(raw) as AppState;
-      if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.workers)) return buildSeed(today);
+      if (!parsed || parsed.version !== 2 || !Array.isArray(parsed.workers)) return buildSeed(today);
       return parsed;
     } catch {
       return buildSeed(today);

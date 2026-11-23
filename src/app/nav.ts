@@ -17,7 +17,7 @@ export const NAV = [
   { to: '/qr', label: 'QR Helmet IDs', icon: QrCode },
   { to: '/training', label: 'Training & SIC', icon: GraduationCap },
   { to: '/expiry', label: 'Permit Expiry', icon: CalendarClock },
-  { to: '/strikes', label: 'Safety Strikes', icon: AlertTriangle, badge: true },
+  { to: '/strikes', label: 'Strike Approvals', icon: AlertTriangle, badge: true },
   { to: '/contractors', label: 'Contractors', icon: Building2 },
   { to: '/reports', label: 'Reports & Audit', icon: FileBarChart },
   { to: '/emergency', label: 'Emergency Contacts', icon: Phone },

@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { initialApprovalStatus, nextApprovalStatus } from '../domain/approval';
+import { activatedRegistrationStatus, REGISTRATION_AUDIT_ACTION } from '../domain/approval';
+import { isIdentityColor } from '../domain/companyColors';
 import { addDays } from '../domain/dates';
 import { canManageContractors, canManageUsers, canRegister, canResetDemo, canToggleStrikeFlag } from '../domain/permissions';
 import { canProposeStrike, currentStrikeLevel, nextStrikeStatus, openStrike } from '../domain/strikes';
 import type {
   AppState,
   AppUser,
-  ApprovalAction,
   Company,
   Role,
   StrikeDecision,
@@ -41,12 +41,6 @@ interface StoreValue {
   setPublicStrikeIndicator: (on: boolean) => void;
   resetDemo: () => ActionResult;
   registerWorker: (draft: WorkerDraft) => ActionResult;
-  resubmitWorker: (workerId: string, draft: WorkerDraft, remarks: string) => ActionResult;
-  decideRegistration: (
-    workerId: string,
-    action: Extract<ApprovalAction, 'approve' | 'reject' | 'request_changes'>,
-    remarks: string,
-  ) => ActionResult;
   saveTraining: (
     workerId: string,
     input: Omit<TrainingRecord, 'id' | 'workerId'> & { id?: string },
@@ -193,7 +187,8 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
         return { ok: true };
       },
       registerWorker: (draft) => {
-        if (!canRegister(actor.role)) return { ok: false, error: 'This role cannot register workers.' };
+        if (!canRegister(actor.role)) return { ok: false, error: 'Only the Safety Officer can register workers.' };
+        if (!draft.photoDataUrl) return { ok: false, error: 'A profile photo is required.' };
         const id = nextWorkerId(state.workers);
         const worker: Worker = {
           id,
@@ -215,133 +210,36 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
           csocNumber: draft.csocNumber.trim(),
           csocExpiry: draft.csocExpiry,
           siteInduction: draft.siteInduction,
-          approvalStatus: initialApprovalStatus(),
+          approvalStatus: activatedRegistrationStatus(),
           approvalTrail: [
             {
               id: uid(),
               at: new Date().toISOString(),
               role: actor.role,
               actor: actor.name,
-              action: 'submit',
-              remarks: 'Registration submitted for review. Not auto-approved.',
-              from: 'pending_personnel',
-              to: 'pending_personnel',
+              action: 'activate',
+              remarks: 'Registered and activated by Safety Officer. Helmet QR is on.',
+              from: 'approved',
+              to: 'approved',
             },
           ],
           trainings: [],
           strikes: [],
           nextOfKin: draft.nextOfKin,
           createdAt: new Date().toISOString(),
+          photoDataUrl: draft.photoDataUrl,
         };
         const withCourse = syncCsoc(worker, worker.csocNumber, worker.csocExpiry);
         update((current) =>
           withAudit(
             { ...current, workers: [...current.workers, withCourse] },
-            'Registration submitted',
+            REGISTRATION_AUDIT_ACTION,
             `${withCourse.firstName} ${withCourse.lastName}`,
-            'Status set to Pending Review. QR stays inactive until all three approvals.',
+            'Status Active. Helmet QR is on.',
           ),
         );
-        setToast(`${withCourse.firstName} ${withCourse.lastName} is Pending Review`);
+        setToast(`${withCourse.firstName} ${withCourse.lastName} is Active. Helmet QR is on.`);
         return { ok: true, id };
-      },
-      resubmitWorker: (workerId, draft, remarks) => {
-        const worker = state.workers.find((item) => item.id === workerId);
-        if (!worker) return { ok: false, error: 'Worker not found.' };
-        const next = nextApprovalStatus(worker.approvalStatus, actor.role, 'resubmit');
-        if (!next) return { ok: false, error: 'This registration cannot be resubmitted by the current role.' };
-        if (!remarks.trim()) return { ok: false, error: 'Add a remark for the resubmission.' };
-        update((current) => {
-          const workers = current.workers.map((item) => {
-            if (item.id !== workerId) return item;
-            const patched = syncCsoc(
-              {
-                ...item,
-                firstName: draft.firstName.trim(),
-                lastName: draft.lastName.trim(),
-                nationality: draft.nationality,
-                nricMasked: draft.nricMasked.toUpperCase(),
-                dob: draft.dob,
-                phone: draft.phone.trim(),
-                address: draft.address.trim(),
-                companyId: draft.companyId,
-                projectId: draft.projectId,
-                designation: draft.designation,
-                trade: draft.trade,
-                siteInduction: draft.siteInduction,
-                workPermitNumber: draft.workPermitNumber.trim(),
-                workPermitExpiry: draft.workPermitExpiry,
-                nextOfKin: draft.nextOfKin,
-                approvalStatus: next,
-                approvalTrail: [
-                  ...item.approvalTrail,
-                  {
-                    id: uid(),
-                    at: new Date().toISOString(),
-                    role: actor.role,
-                    actor: actor.name,
-                    action: 'resubmit' as const,
-                    remarks: remarks.trim(),
-                    from: item.approvalStatus,
-                    to: next,
-                  },
-                ],
-              },
-              draft.csocNumber.trim(),
-              draft.csocExpiry,
-            );
-            return patched;
-          });
-          return withAudit(
-            { ...current, workers },
-            'Registration resubmitted',
-            `${draft.firstName} ${draft.lastName}`,
-            remarks.trim(),
-          );
-        });
-        setToast('Resubmitted as Pending Review');
-        return { ok: true, id: workerId };
-      },
-      decideRegistration: (workerId, action, remarks) => {
-        const worker = state.workers.find((item) => item.id === workerId);
-        if (!worker) return { ok: false, error: 'Worker not found.' };
-        if ((action === 'reject' || action === 'request_changes') && remarks.trim().length < 3) {
-          return { ok: false, error: 'Remarks are required for this decision.' };
-        }
-        const next = nextApprovalStatus(worker.approvalStatus, actor.role, action);
-        if (!next) return { ok: false, error: 'This role cannot act on the current approval stage.' };
-        const note = remarks.trim() || 'Approved at this stage.';
-        update((current) => {
-          const workers = current.workers.map((item) =>
-            item.id === workerId
-              ? {
-                  ...item,
-                  approvalStatus: next,
-                  approvalTrail: [
-                    ...item.approvalTrail,
-                    {
-                      id: uid(),
-                      at: new Date().toISOString(),
-                      role: actor.role,
-                      actor: actor.name,
-                      action,
-                      remarks: note,
-                      from: item.approvalStatus,
-                      to: next,
-                    },
-                  ],
-                }
-              : item,
-          );
-          return withAudit(
-            { ...current, workers },
-            `Registration ${action.replace('_', ' ')}`,
-            `${worker.firstName} ${worker.lastName}`,
-            note,
-          );
-        });
-        setToast(next === 'approved' ? 'Approved. Helmet QR is now active.' : 'Decision recorded');
-        return { ok: true };
       },
       saveTraining: (workerId, input) => {
         const worker = state.workers.find((item) => item.id === workerId);
@@ -510,6 +408,7 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
       saveCompany: (company) => {
         if (!canManageContractors(actor.role)) return { ok: false, error: 'This role cannot edit contractors.' };
         if (!company.name.trim() || !company.uen.trim()) return { ok: false, error: 'Name and UEN are required.' };
+        if (!isIdentityColor(company.color)) return { ok: false, error: 'Pick an identity colour from the palette.' };
         const id = company.id || `c-${uid().slice(0, 8)}`;
         const nextCompany: Company = {
           id,
@@ -519,6 +418,7 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
           focus: company.focus.trim(),
           contactName: company.contactName.trim(),
           phone: company.phone.trim(),
+          color: company.color,
         };
         update((current) => {
           const exists = current.companies.some((item) => item.id === id);

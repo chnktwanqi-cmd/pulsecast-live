@@ -6,6 +6,7 @@ import { tokens } from '../../config/tokens';
 import { useDemo } from '../../data/store';
 import { formatDate } from '../../domain/dates';
 import { getExpiryTier } from '../../domain/expiry';
+import { groupPersonnel } from '../../domain/grouping';
 import { canEditTraining } from '../../domain/permissions';
 import type { CourseCode, TrainingRecord, Worker } from '../../domain/types';
 import { TrainingModal } from './TrainingModal';
@@ -43,7 +44,19 @@ export function TrainingPage() {
               </tr>
             </thead>
             <tbody>
-              {scoped.map((worker) => (
+              {groupPersonnel(scoped, state.companies).flatMap((group) => [
+                <tr key={`group-${group.company.id}`} className="border-t border-slate-100 bg-white/70">
+                  <td colSpan={4} className="px-3 py-2">
+                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: group.company.color }} />
+                      {group.company.name}
+                      <span className="rounded-full px-2 py-0.5 text-[10px] text-white" style={{ background: group.company.color }}>
+                        {group.workers.length}
+                      </span>
+                    </span>
+                  </td>
+                </tr>,
+                ...group.workers.map((worker) => (
                 <tr key={worker.id} className="border-t border-slate-100">
                   <td className="px-3 py-3">
                     <button className="text-left font-semibold text-slate-800" onClick={() => navigate(`/workers/${worker.id}`)}>
@@ -75,7 +88,8 @@ export function TrainingPage() {
                     );
                   })}
                 </tr>
-              ))}
+                )),
+              ])}
             </tbody>
           </table>
         </div>

@@ -1,7 +1,7 @@
 import type { Role } from './types';
 
 export function canRegister(role: Role): boolean {
-  return role === 'Safety Personnel' || role === 'Safety Officer' || role === 'Safety Manager';
+  return role === 'Safety Officer' || role === 'Admin';
 }
 
 export function canManageContractors(role: Role): boolean {
@@ -13,7 +13,7 @@ export function canManageUsers(role: Role): boolean {
 }
 
 export function canEditTraining(role: Role): boolean {
-  return role === 'Safety Personnel' || role === 'Safety Officer' || role === 'Safety Manager';
+  return role === 'Safety Officer' || role === 'Admin';
 }
 
 export function canToggleStrikeFlag(role: Role): boolean {

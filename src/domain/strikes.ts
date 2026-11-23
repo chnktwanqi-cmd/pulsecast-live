@@ -22,7 +22,7 @@ export function strikeLabel(level: StrikeLevel): string {
 }
 
 export function canProposeStrike(role: Role): boolean {
-  return role === 'Safety Personnel' || role === 'Safety Officer' || role === 'Safety Manager';
+  return role === 'Safety Officer' || role === 'Safety Manager';
 }
 
 export function canDecideStrike(status: StrikeStatus, role: Role): boolean {

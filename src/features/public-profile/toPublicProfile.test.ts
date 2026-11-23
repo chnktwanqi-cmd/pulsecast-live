@@ -31,6 +31,8 @@ describe('toPublicProfile', () => {
     expect(profile.strikeColor).toBe('orange');
     expect(profile.displayName).toBe('Raj Kumar');
     expect(profile.company).toBe('Beta Civil Works');
+    expect(profile.companyColor).toBe(company?.color);
+    expect(profile.photoDataUrl).toBeNull();
   });
 
   it('drops the strike colour when the privacy flag is off', () => {
@@ -38,8 +40,10 @@ describe('toPublicProfile', () => {
     expect(profile?.strikeColor).toBeNull();
   });
 
-  it('returns null until the worker is fully approved', () => {
-    const pending = state.workers.find((worker) => worker.approvalStatus === 'pending_personnel')!;
-    expect(toPublicProfile(pending, company, project, today, true)).toBeNull();
+  it('publishes every registered worker because registration is active immediately', () => {
+    expect(state.workers.every((worker) => worker.approvalStatus === 'approved')).toBe(true);
+    expect(state.users.map((user) => user.name)).not.toContain('Aisha Rahman');
+    const profile = toPublicProfile(raj!, company, project, today, true);
+    expect(profile?.registrationActive).toBe(true);
   });
 });

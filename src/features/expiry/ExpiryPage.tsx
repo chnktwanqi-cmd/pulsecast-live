@@ -11,6 +11,7 @@ import { tokens } from '../../config/tokens';
 import { useDemo } from '../../data/store';
 import { daysBetween } from '../../domain/dates';
 import { getExpiryTier, tierLabel, worseTier, type ExpiryTier } from '../../domain/expiry';
+import { groupPersonnel } from '../../domain/grouping';
 import { downloadCsv } from '../../lib/csv';
 import type { Worker } from '../../domain/types';
 
@@ -152,8 +153,19 @@ export function ExpiryPage() {
             ))}
           </FilterSelect>
         </FilterBar>
-        <div className="mt-4">
-          <DataTable columns={columns} rows={filtered} rowKey={(worker) => worker.id} onRow={(worker) => navigate(`/workers/${worker.id}`)} />
+        <div className="mt-4 space-y-6">
+          {groupPersonnel(filtered, state.companies).map((group) => (
+            <section key={group.company.id}>
+              <div className="mb-2 flex items-center gap-2 px-1">
+                <span className="h-3 w-3 rounded-full" style={{ background: group.company.color }} />
+                <h3 className="text-sm font-bold text-slate-800">{group.company.name}</h3>
+                <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: group.company.color }}>
+                  {group.workers.length}
+                </span>
+              </div>
+              <DataTable columns={columns} rows={group.workers} rowKey={(worker) => worker.id} onRow={(worker) => navigate(`/workers/${worker.id}`)} />
+            </section>
+          ))}
         </div>
       </GlassCard>
     </div>

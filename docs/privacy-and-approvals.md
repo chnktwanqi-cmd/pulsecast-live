@@ -2,17 +2,11 @@
 
 ## Registration
 
-Submitting the registration form calls `initialApprovalStatus()`, which is hard-coded to `pending_personnel`. The UI copy on the review step says the same thing: submit does not approve.
+The earlier three-stage review is retired. The Safety Officer registers the worker and the record is Active on submit. `activatedRegistrationStatus()` returns `approved`. The helmet QR is on immediately. The store writes one audit entry whose action is `Registered and activated by Safety Officer`.
 
-`nextApprovalStatus` is a pure function. A role that does not own the current stage gets `null`, and the store refuses the command. The sequence is fixed:
+Only the Safety Officer and Admin can open the registration form. Other roles see the registry read-only. A profile photo is required before submit. Seed workers keep a null photo and an initials placeholder.
 
-```
-submit → Pending Personnel → Pending Officer → Pending Manager → Approved
-```
-
-Reject ends the file. Request changes parks it until a safety role resubmits, which returns it to Pending Personnel rather than jumping ahead. The QR gallery and the public route both treat anything other than Approved as inactive.
-
-Each decision stores actor, role, timestamp, from-status, to-status and remarks. Reject and request-changes require remarks. Approve uses the remarks field or a short default so the trail is never blank.
+Safety Manager and Project Director do not approve onboarding. Their approval actions are only on **Strike Approvals**.
 
 ## Strikes
 
